@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tournament Hub</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1d1b16;--mut:#6d675b;--line:#e4dfd3;--acc:#d9480f;--win:#2b8a3e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15130f;--card:#201d17;--ink:#f1ede2;--mut:#a29b8a;--line:#383327;--acc:#ff8a4c;--win:#69db7c}}
+:root[data-theme="dark"]{--bg:#15130f;--card:#201d17;--ink:#f1ede2;--mut:#a29b8a;--line:#383327;--acc:#ff8a4c;--win:#69db7c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:18px 16px 6px;max-width:1100px;margin:auto}
+h1{margin:0;font-size:26px;letter-spacing:-.5px}h2{font-size:18px;margin:22px 0 8px}
+.sub{color:var(--mut);font-size:13px}
+nav{display:flex;gap:6px;padding:10px 16px;max-width:1100px;margin:auto;overflow-x:auto}
+nav button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:99px;font:inherit;cursor:pointer;white-space:nowrap}
+nav button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+main{max-width:1100px;margin:auto;padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0}
+.scroll{overflow-x:auto}
+.br{display:flex;gap:14px;min-width:640px;align-items:center}
+.rd{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:10px}
+.rd h4{margin:0;font-size:11px;text-transform:uppercase;color:var(--mut);text-align:center}
+.m{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.t{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 8px;font-size:13px}
+.t+.t{border-top:1px solid var(--line)}.t.w{font-weight:700;color:var(--win)}.t span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+input{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:4px 6px;max-width:100%}
+input.sc{width:46px;text-align:center}input.w1{width:70px}
+table{width:100%;border-collapse:collapse}td,th{padding:6px 4px;text-align:left;border-bottom:1px solid var(--line);font-size:14px}
+th{font-size:11px;text-transform:uppercase;color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat b{display:block;font-size:26px;color:var(--acc)}.stat span{font-size:12px;color:var(--mut)}
+button.b{background:var(--acc);color:#fff;border:0;padding:8px 12px;border-radius:8px;font:inherit;cursor:pointer;margin:2px}
+button.g{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.warn{color:#c92a2a;font-size:13px}.fact{padding:8px 0;border-bottom:1px solid var(--line)}
+</style></head><body>
+<header><h1>🏆 Tournament Hub</h1><div class="sub" id="who"></div></header>
+<nav id="nav"></nav><main id="app"></main>
+<script>
+const DEF={buyIn:20,evNames:["Event 1","Event 2","Event 3"],
+teams:[["Bean","Max"],["Riley","Gabe"],["Kai","Cameron"],["Bella","Syra"],["Rafi","Ritchie"],["Matt","Ryan"],["Austin","Miles"],["Cruz","Teammate"]],
+seeds:[[5,7,3],[7,4,8],[8,5,1],[6,2,5],[1,3,4],[4,8,7],[2,1,6],[3,6,2]],
+pts:[10,6,3,1],pay:[60,25,15],scores:{}};
+const SAVED=null;
+let S=JSON.parse(JSON.stringify(DEF)),tab="br",edit=false;
+try{const L=JSON.parse(localStorage.getItem("tourney")||"null");const pick=(L&&(!SAVED||(L.t||0)>(SAVED.t||0)))?L:SAVED;if(pick)S=Object.assign(S,pick)}catch(e){if(SAVED)S=Object.assign(S,SAVED)}
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const isAdmin=()=>edit;
+const tn=t=>t==null?"TBD":S.teams[t].map(esc).join(" & ");
+const slotTeam=e=>{const a={};S.seeds.forEach((s,t)=>a[s[e]]=t);return a};
+function res(e,r,m){const [a,b]=mt(e,r,m),sc=S.scores[e+"."+r+"."+m]||[null,null];
+ if(sc[0]==null||sc[1]==null||sc[0]===sc[1]||a==null||b==null)return{a,b,sc,w:null,l:null};
+ return sc[0]>sc[1]?{a,b,sc,w:a,l:b}:{a,b,sc,w:b,l:a}}
+function mt(e,r,m){if(r==0){const s=slotTeam(e);return[s[2*m+1]??null,s[2*m+2]??null]}return[res(e,r-1,2*m).w,res(e,r-1,2*m+1).w]}
+function calc(){const T=S.teams.map(()=>({pts:0,w:0,l:0,pf:0,pa:0})),ms=[];
+ for(let e=0;e<3;e++)for(let r=0;r<3;r++)for(let m=0;m<4/2**r;m++){const x=res(e,r,m);if(x.w==null)continue;
+  const [ws,ls]=x.w==x.a?[x.sc[0],x.sc[1]]:[x.sc[1],x.sc[0]];ms.push({e,r,w:x.w,l:x.l,ws,ls});
+  T[x.w].w++;T[x.l].l++;T[x.w].pf+=ws;T[x.w].pa+=ls;T[x.l].pf+=ls;T[x.l].pa+=ws;
+  const p=S.pts;T[x.l].pts+=r==2?p[1]:r==1?p[2]:p[3];if(r==2)T[x.w].pts+=p[0]}
+ return{T,ms}}
+function bracket(e){const R=["Quarterfinals","Semifinals","Final"];
+ return`<div class="card scroll"><b>${esc(S.evNames[e])}</b><div class="br" style="margin-top:8px">`+R.map((n,r)=>`<div class="rd"><h4>${n}</h4>`+
+ Array.from({length:4/2**r},(_,m)=>{const x=res(e,r,m),ad=isAdmin();
+ return`<div class="m">`+[x.a,x.b].map((t,i)=>`<div class="t ${x.w!=null&&x.w==t?"w":""}"><span>${tn(t)}</span>`+(ad&&t!=null&&x.a!=null&&x.b!=null?`<input class="sc" type="number" data-sc="${e}.${r}.${m}" data-i="${i}" value="${x.sc[i]??""}">`:`<span>${x.sc[i]??""}</span>`)+`</div>`).join("")+`</div>`}).join("")+`</div>`).join("")+`</div></div>`}
+function view(){const{T,ms}=calc(),ad=isAdmin();
+ const rank=T.map((t,i)=>({...t,i})).sort((a,b)=>b.pts-a.pts||(b.pf-b.pa)-(a.pf-a.pa)||b.w-a.w);
+ if(tab=="br")return[0,1,2].map(bracket).join("")+(ad?"":'<p class="sub">View-only. Admins can enter scores.</p>');
+ if(tab=="lb")return`<div class="card scroll"><table><tr><th>#</th><th>Team</th><th>Pts</th><th>W-L</th><th>+/-</th></tr>`+rank.map((t,k)=>`<tr><td>${k+1}</td><td>${tn(t.i)}</td><td><b>${t.pts}</b></td><td>${t.w}-${t.l}</td><td>${t.pf-t.pa}</td></tr>`).join("")+`</table></div><p class="sub">Per event: 1st ${S.pts[0]} · 2nd ${S.pts[1]} · semifinal exit ${S.pts[2]} · quarterfinal exit ${S.pts[3]} pts. Points are awarded when each round is decided.</p>`;
+ if(tab=="pot"){const pot=S.buyIn*S.teams.length,tot=ms.reduce((a,m)=>a+m.ws+m.ls,0),hi=[...ms].sort((a,b)=>b.ws-a.ws)[0],bl=[...ms].sort((a,b)=>(b.ws-b.ls)-(a.ws-a.ls))[0],cl=[...ms].sort((a,b)=>(a.ws-a.ls)-(b.ws-b.ls))[0],un=T.map((t,i)=>({...t,i})).filter(t=>t.w>0&&!t.l),top=rank[0];
+ const star=rank.slice(0,3).filter(t=>t.pts>0);const ev=n=>S.evNames[n];
+ const facts=[`${S.teams.length*2} players across ${S.teams.length} teams are chasing a $${pot} pot.`,ms.length?`${ms.length} of 21 matches are done (${Math.round(ms.length/21*100)}%).`:"No matches played yet. Everyone is still undefeated!",hi&&`Highest score so far: ${hi.ws} by ${tn(hi.w)} (${ev(hi.e)}).`,bl&&`Biggest blowout: ${tn(bl.w)} beat ${tn(bl.l)} by ${bl.ws-bl.ls}.`,cl&&`Closest game: ${tn(cl.w)} edged ${tn(cl.l)} by ${cl.ws-cl.ls}.`,un.length&&`Still perfect: ${un.map(t=>tn(t.i)).join(", ")} (${un[0].w} win${un[0].w>1?"s":""}).`,ms.length&&`Average winning score: ${(ms.reduce((a,m)=>a+m.ws,0)/ms.length).toFixed(1)}.`].filter(Boolean);
+ return`<div class="grid"><div class="stat"><b>$${pot}</b><span>Total pot</span></div><div class="stat"><b>${ms.length}/21</b><span>Matches played</span></div><div class="stat"><b>${tot}</b><span>Total points scored</span></div><div class="stat"><b>${top&&top.pts?tn(top.i):"-"}</b><span>Current leader</span></div></div>
+ <h2>💰 Payouts</h2><div class="card">`+S.pay.map((p,k)=>`<div class="fact">${["🥇 1st","🥈 2nd","🥉 3rd"][k]}: <b>$${(pot*p/100).toFixed(2)}</b> (${p}%) ${rank[k]&&rank[k].pts?"· currently "+tn(rank[k].i):""}</div>`).join("")+(S.pay.reduce((a,b)=>a+b,0)!=100?`<div class="warn">Payout percentages add up to ${S.pay.reduce((a,b)=>a+b,0)}%, not 100%.</div>`:"")+`</div>
+ <h2>⭐ Star players</h2><div class="card">${star.length?star.map(t=>`<div class="fact"><b>${esc(S.teams[t.i][0])}</b> and <b>${esc(S.teams[t.i][1])}</b>: ${t.pts} pts, ${t.w}-${t.l}</div>`).join(""):"Stars appear once points are on the board."}</div>
+ <h2>🤓 Cool facts</h2><div class="card">${facts.map(f=>`<div class="fact">${esc(f)}</div>`).join("")}</div>`}
+ if(tab=="ad"){if(!ad)return`<div class="card">Tap "Edit mode" above to change scores and settings.</div>`;
+ const dup=[0,1,2].filter(e=>new Set(S.seeds.map(s=>s[e])).size!=S.teams.length);
+ return`<h2>Money &amp; points</h2><div class="card">Buy-in per team $<input class="w1" type="number" data-p="buyIn" value="${S.buyIn}"><br><br>Payout % (1st/2nd/3rd): `+S.pay.map((v,i)=>`<input class="sc" type="number" data-p="pay.${i}" value="${v}">`).join("")+`<br><br>Points per event (1st/2nd/semi exit/QF exit): `+S.pts.map((v,i)=>`<input class="sc" type="number" data-p="pts.${i}" value="${v}">`).join("")+`<br><br>Event names: `+S.evNames.map((v,i)=>`<input class="w1" data-p="evNames.${i}" value="${esc(v)}">`).join(" ")+`</div>
+ <h2>Teams &amp; bracket draws</h2><div class="card scroll"><table><tr><th>#</th><th>Players</th><th>Draw slot (1-8) in each event</th></tr>`+S.teams.map((t,i)=>`<tr><td>${i+1}</td><td><input class="w1" data-p="teams.${i}.0" value="${esc(t[0])}"> <input class="w1" data-p="teams.${i}.1" value="${esc(t[1])}"></td><td>`+S.seeds[i].map((v,e)=>`<input class="sc" type="number" min="1" max="8" data-p="seeds.${i}.${e}" value="${v}">`).join(" ")+`</td></tr>`).join("")+`</table>${dup.length?`<div class="warn">Duplicate slots in: ${dup.map(e=>esc(S.evNames[e])).join(", ")}</div>`:""}</div>
+
+ <button class="b g" data-act="reset">Clear all scores</button> <button class="b g" data-act="defaults">Restore defaults</button>`}}
+function render(){$("#nav").innerHTML=[["br","Brackets"],["lb","Leaderboard"],["pot","Pot & Stats"],["ad","Settings"]].map(([k,n])=>`<button class="${tab==k?"on":""}" data-tab="${k}">${n}</button>`).join("")+`<button class="${edit?"on":""}" data-act="edit">${edit?"✓ Edit mode on":"✏️ Edit mode"}</button><button data-act="dl">⬇ Save file</button>`;
+ $("#who").textContent=edit?"Edit mode: tap Save file to download an updated copy to share":"Live bracket · tap Edit mode to enter scores";$("#app").innerHTML=view()}
+function save(fn){const c=JSON.parse(JSON.stringify(S));fn(c);c.t=Date.now();S=c;try{localStorage.setItem("tourney",JSON.stringify(c))}catch(e){}render()}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const d=b.dataset;
+ if(d.tab){tab=d.tab;render()}
+ else if(d.act=="edit"){edit=!edit;render()}
+ else if(d.act=="dl"){S.t=Date.now();const h=document.documentElement.cloneNode(true);h.querySelector("#app").innerHTML="";h.querySelector("#nav").innerHTML="";const sc=[...h.querySelectorAll("script")].pop();sc.textContent=sc.textContent.replace(/const SAVED=.*?;\n/,()=>"const SAVED="+JSON.stringify(S).replace(/</g,"\\u003c")+";\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["<!DOCTYPE html>\n"+h.outerHTML],{type:"text/html"}));a.download="tournament.html";a.click()}
+ else if(d.act=="reset"&&confirm("Clear every score?"))save(c=>c.scores={});
+ else if(d.act=="defaults"&&confirm("Restore team names, draws, points and money to defaults?"))save(c=>Object.assign(c,JSON.parse(JSON.stringify(DEF)),{scores:c.scores}))});
+document.addEventListener("change",e=>{const t=e.target,d=t.dataset;
+ if(d.sc){const k=d.sc,pair=[...document.querySelectorAll(`[data-sc="${k}"]`)].map(i=>i.value===""?null:+i.value);save(c=>c.scores[k]=pair)}
+ else if(d.p){const p=d.p.split("."),v=t.type=="number"?+t.value:t.value;save(c=>{let o=c;p.slice(0,-1).forEach(k=>o=o[k]);o[p.at(-1)]=v})}});
+render();
+</script></body></html>
